@@ -78,7 +78,7 @@ def calcular_ambientes(img, k=3):
     Segmenta la imagen en k ambientes usando KMeans.
     """
 
-    # Suavizado (reduce ruido)
+    #Suavizado (reduce ruido)
     k_blur = max(3, int(k // 2) * 2 + 1)  # asegurar impar
     img_gauss = cv2.GaussianBlur(img, (k_blur, k_blur), 0)
 
@@ -101,6 +101,7 @@ def calcular_ambientes(img, k=3):
     mapa_ordenado = np.zeros_like(mapa)
 
     for i, idx in enumerate(orden):
+        print(i)
         mapa_ordenado[mapa == idx] = i
 
     mapa = mapa_ordenado

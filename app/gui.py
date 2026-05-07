@@ -422,19 +422,130 @@ class AgroApp:
             mapa, porcentajes, cmap = calcular_ambientes(self.img, k)
 
         # =========================
+        # FILTRADO POR TAMAÑO MÍNIMO
+        # =========================
+        min_area = 00  # 🔥 ajustable luego con slider
+
+        print("Creando copia del mapa")
+        print("Filtro de area " + str(min_area))
+
+        try:
+            mapa_filtrado = np.copy(mapa)
+        except Exception as e:
+            print(f"Error al crear mapa: {e}")
+            return
+
+        # =========================
+        # LISTA PARA GUARDAR ÁREAS
+        # =========================
+        areas_regiones = []
+
+        # contador global
+        total_regiones_eliminadas = 0
+
+        for clase in np.unique(mapa):
+
+            print(f"\n==============================")
+            print(f"Analizando la clase {clase}")
+
+            # contador por clase
+            regiones_eliminadas = 0
+
+            mask = (mapa == clase).astype(np.uint8)
+
+            num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+                mask,
+                connectivity=8
+            )
+
+            print(f"Regiones detectadas: {num_labels - 1}")
+
+            for i in range(1, num_labels):  # 0 es fondo
+
+                area = stats[i, cv2.CC_STAT_AREA]
+
+                # =========================
+                # GUARDAR ÁREA
+                # =========================
+                areas_regiones.append(area)
+
+                porcentaje = (i / (num_labels - 1)) * 100
+
+                if area < min_area:
+
+                    regiones_eliminadas += 1
+                    total_regiones_eliminadas += 1
+
+                    region = (labels == i)
+
+                    # buscar vecinos
+                    dilatada = cv2.dilate(
+                        region.astype(np.uint8),
+                        np.ones((3,3), np.uint8)
+                    )
+
+                    vecinos = mapa[dilatada.astype(bool)]
+
+                    # excluir la misma clase
+                    vecinos = vecinos[vecinos != clase]
+
+                    if len(vecinos) > 0:
+
+                        nueva_clase = np.bincount(vecinos).argmax()
+                        mapa_filtrado[region] = nueva_clase
+
+
+            print(f"Regiones eliminadas en clase {clase}: {regiones_eliminadas}")
+
+        print("\n==============================")
+        print(f"TOTAL DE REGIONES ELIMINADAS: {total_regiones_eliminadas}")
+
+        # =========================
+        # GRÁFICO
+        # =========================
+        plt.figure(figsize=(12,6))
+
+        plt.hist(
+            areas_regiones,
+            bins=30,
+            #range=(0, 50)
+        )
+
+        plt.xlabel("Número de región")
+        plt.ylabel("Área de región (px)")
+        plt.title("Área de cada región detectada")
+
+        plt.grid(True)
+
+        plt.show()
+
+        # =========================
+        # USAR MAPA FILTRADO
+        # =========================
+        mapa = mapa_filtrado
+
+        # =========================
         # VISUALIZACIÓN
         # =========================
         mapa_color = cmap(mapa)[:, :, :3]
         mapa_color = (mapa_color * 255).astype(np.uint8)
 
-        self.mapa_procesado = cv2.cvtColor(mapa_color, cv2.COLOR_RGB2BGR)
+        self.mapa_procesado = cv2.cvtColor(
+            mapa_color,
+            cv2.COLOR_RGB2BGR
+        )
 
         self.mostrar_imagen(self.mapa_procesado)
-        self.label_info.config(text=f"Ambientes: {k}")
+
+        self.label_info.config(
+            text=f"Ambientes: {k}"
+        )
 
         # contornos
         self.capa_contornos = self.crear_capa_contornos(mapa)
+
         self.mapa_color = mapa_color
+
         self.actualizar_overlay()
 
     def crear_capa_contornos(self,mapa):
