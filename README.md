@@ -6,20 +6,11 @@
 
 ## Descripción
 
-**AgroPID** es una aplicación desarrollada en Python para el análisis de cultivos a partir de imágenes, orientada a la detección de variabilidad espacial y generación de ambientes productivos.
+**AgroPID** es una aplicación desarrollada en Python orientada al análisis de imágenes aplicadas a la agricultura de precisión. El sistema permite procesar imágenes obtenidas mediante drones, satélites o cámaras terrestres para identificar variabilidad espacial, delimitar ambientes productivos y analizar el estado de cultivos y suelos.
 
-El sistema utiliza técnicas de **visión por computadora** y procesamiento digital de imágenes para identificar patrones en cultivos, permitiendo una mejor toma de decisiones en agricultura de precisión.
+La plataforma utiliza técnicas de visión por computadora, procesamiento digital de imágenes e inteligencia artificial para detectar patrones, segmentar regiones de interés y extraer información agronómica relevante a partir de datos visuales.
 
----
-
-## 🚀 Características principales
-
-* 📸 Carga de imágenes de cultivos (dron, satélite o campo)
-* 🌿 Análisis de cobertura vegetal
-* 🧠 Detección de estrés en cultivos
-* 🎨 Generación de mapas de ambientes
-* 🔍 Procesamiento basado en OpenCV
-* ⚙️ Interfaz gráfica interactiva
+AgroPID integra herramientas de análisis espectral, clasificación de imágenes y detección de colores permitiendo generar mapas de apoyo para la toma de decisiones agronómicas.
 
 ---
 
@@ -33,80 +24,35 @@ El sistema utiliza técnicas de **visión por computadora** y procesamiento digi
 
 ---
 
-## 📊 Ejemplo de funcionamiento
+## Instalación
+* Descarga
 
-1. Cargar imagen del cultivo
-2. Procesar la imagen
-3. Generar mapa de ambientes
-4. Analizar resultados
+* Ingresar al repositorio oficial:
+ https://github.com/NicoLucio95/AgroPID
 
-*(Podés agregar capturas acá más adelante)*
+* Abrir la sección Releases.
 
----
-
-## 📂 Estructura del proyecto
-
-```
-AgroPID/
-│
-├── app/            # Interfaces gráficas
-├── core/           # Lógica de análisis
-├── utils/          # Funciones auxiliares
-├── assets/         # Imágenes y recursos
-│
-├── main.py         # Punto de entrada
-└── main.spec       # Configuración de build
-```
+* Descargar la última versión disponible del ejecutable.
 
 ---
 
-## ▶️ Cómo ejecutar el proyecto
+## Ejecución
+* Abrir la carpeta donde se descargó el programa.
 
-### 1. Clonar repositorio
+* Ejecutar:
 
-```bash
-git clone https://github.com/NicoLucio95/AgroPID.git
-cd AgroPID
-```
-
-### 2. Crear entorno virtual (opcional pero recomendado)
-
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-### 3. Instalar dependencias
-
-```bash
-pip install -r requirements.txt
-```
-
-*(Si no tenés requirements.txt, puedo generártelo)*
-
-### 4. Ejecutar
-
-```bash
-python main.py
-```
+AgroPID 0.1.exe
 
 ---
 
-## 📈 Aplicaciones
+##  Futuras mejoras
 
-* Agricultura de precisión
-* Monitoreo de cultivos
-* Detección temprana de estrés vegetal
-* Análisis de imágenes satelitales o de drones
-
----
-
-## 🧠 Futuras mejoras
-
-* Integración con imágenes satelitales en tiempo real
-* Uso de modelos de machine learning
-* Exportación de reportes automáticos
-* Versión móvil (Android)
+* 1. Índices de vegetación
+* 2. Georreferenciación
+* 3. Exportación GIS
+* 4. IA / Machine Learning
+* 5. Análisis temporal
+* 6. Panel estadístico
 
 ---
 
