@@ -1,10 +1,10 @@
-# 🌱 AgroPID
+# AgroPID
 
 ### Análisis de cultivos mediante procesamiento de imágenes e inteligencia artificial
 
 ---
 
-## 🎯 Descripción
+## Descripción
 
 **AgroPID** es una aplicación desarrollada en Python para el análisis de cultivos a partir de imágenes, orientada a la detección de variabilidad espacial y generación de ambientes productivos.
 
