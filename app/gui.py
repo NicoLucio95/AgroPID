@@ -22,7 +22,7 @@ class AgroApp:
 
         self.root = root
         self.root.title("AgroPID - Análisis de Ambientes")
-        self.root.geometry("1000x600")
+        self.root.geometry("1000x800")
 
         # =========================
         # COLORES
@@ -42,8 +42,7 @@ class AgroApp:
         self.img = None
         self.mapa_procesado = None
         self.overlay = None
-        #self.scores_cache = None
-        #self.k_optimo_cache = None
+        
         self.auto_cache = None
 
         self.lista_mapas = []
@@ -59,7 +58,11 @@ class AgroApp:
         self.mostrar_contornos = False
         self.capa_contornos = None
 
-        self.alpha = 0  # ✅ antes del slider
+        # =========================
+        # CAPAS
+        # =========================
+        self.alpha_imagen = 1.0
+        self.alpha_ambientes = 0.5
 
         # =========================
         # CANVAS
@@ -149,25 +152,89 @@ class AgroApp:
         crear_boton("💾 Guardar Resultado", self.guardar_imagen)
 
         # =========================
-        # SLIDER
+        # SLIDER IMAGEN
         # =========================
-        tk.Label(panel, text="Transparencia",
-                bg=BG_PANEL, fg=TEXT_COLOR).pack(pady=10)
-
-        self.slider = tk.Scale(
+        tk.Label(
             panel,
-            from_=0, to=1,
+            text="Imagen original",
+            bg=BG_PANEL,
+            fg=TEXT_COLOR
+        ).pack(pady=10)
+
+        self.slider_imagen = tk.Scale(
+            panel,
+            from_=0,
+            to=1,
             resolution=0.05,
             orient="horizontal",
             bg=BG_PANEL,
             fg=TEXT_COLOR,
             highlightthickness=0,
             troughcolor="#555",
-            command=self.actualizar_transparencia
+            command=self.actualizar_alpha_imagen
         )
 
-        self.slider.set(self.alpha)
-        self.slider.pack(padx=15, fill="x")
+        self.slider_imagen.set(self.alpha_imagen)
+
+        self.slider_imagen.pack(
+            padx=15,
+            fill="x"
+        )
+
+        # =========================
+        # SLIDER AMBIENTES
+        # =========================
+        tk.Label(
+            panel,
+            text="Ambientes",
+            bg=BG_PANEL,
+            fg=TEXT_COLOR
+        ).pack(pady=10)
+
+        self.slider_ambientes = tk.Scale(
+            panel,
+            from_=0,
+            to=1,
+            resolution=0.05,
+            orient="horizontal",
+            bg=BG_PANEL,
+            fg=TEXT_COLOR,
+            highlightthickness=0,
+            troughcolor="#555",
+            command=self.actualizar_alpha_ambientes
+        )
+
+        self.slider_ambientes.set(
+            self.alpha_ambientes
+        )
+
+        self.slider_ambientes.pack(
+            padx=15,
+            fill="x"
+        )
+
+        # =========================
+        # KSIZE CONTORNOS
+        # =========================
+        tk.Label(
+            panel,
+            text="Suavizado límites (ksize)",
+            bg=BG_PANEL,
+            fg=TEXT_COLOR
+        ).pack(pady=5)
+
+        self.blur_var = tk.Spinbox(
+            panel,
+            from_=1,
+            to=9999,
+            increment=2,
+            width=10
+        )
+
+        self.blur_var.pack(padx=15, pady=5)
+        self.blur_var.delete(0, "end")
+        self.blur_var.insert(0, "5")
+
 
         # =========================
         # INFO
@@ -211,34 +278,89 @@ class AgroApp:
 
         self.info.config(text=texto)
 
-    def actualizar_transparencia(self, val):
-        self.alpha = float(val)
+    def actualizar_alpha_imagen(self, val):
+
+        self.alpha_imagen = float(val)
+
+        self.actualizar_overlay()
+
+    def actualizar_alpha_ambientes(self, val):
+
+        self.alpha_ambientes = float(val)
+
         self.actualizar_overlay()
 
     def actualizar_overlay(self):
 
-        # ❌ No hay imagen base
+        # =========================
+        # VALIDACIONES
+        # =========================
         if self.img is None:
             logging.error("[actualizar_overlay] No hay imagen cargada")
             return
 
-        # ⚠️ No hay mapa → fallback
         if self.mapa_procesado is None:
-            logging.warning("[actualizar_overlay] No hay mapa_procesado, mostrando imagen original")
+            logging.warning("[actualizar_overlay] No hay mapa_procesado")
 
-            self.overlay = self.img.copy()
-            self.mostrar_imagen(self.overlay, reset_view=False)
+            self.mostrar_imagen(
+                self.img,
+                reset_view=False
+            )
+
             return
 
-        # ✅ Caso normal
-        overlay = crear_overlay(self.img, self.mapa_procesado, self.alpha)
+        # =========================
+        # FONDO BLANCO
+        # =========================
+        resultado = np.ones_like(
+            self.img,
+            dtype=np.uint8
+        ) * 255
 
-        # contornos opcionales
+        # =========================
+        # CAPA IMAGEN ORIGINAL
+        # =========================
+        resultado = cv2.addWeighted(
+            resultado,
+            1 - self.alpha_imagen,
+            self.img,
+            self.alpha_imagen,
+            0
+        )
+
+        # =========================
+        # CAPA AMBIENTES
+        # =========================
+        resultado = cv2.addWeighted(
+            resultado,
+            1 - self.alpha_ambientes,
+            self.mapa_procesado,
+            self.alpha_ambientes,
+            0
+        )
+
+        # =========================
+        # CAPA CONTORNOS
+        # =========================
+
+        print("Cargando capa contornos")
         if self.mostrar_contornos and self.capa_contornos is not None:
-            overlay = self.superponer_contornos(overlay, self.capa_contornos)
 
-        self.overlay = overlay
-        self.mostrar_imagen(self.overlay, reset_view=False)
+            resultado = self.superponer_contornos(
+                resultado,
+                self.capa_contornos
+            )
+            print("Capa de contornos cargada")
+
+        # =========================
+        # GUARDAR Y MOSTRAR
+        # =========================
+        self.overlay = resultado
+
+        self.mostrar_imagen(
+            self.overlay,
+            reset_view=False
+        )
 
     def mostrar_imagen(self, img, reset_view=True):
         self.img_original = img
@@ -381,7 +503,18 @@ class AgroApp:
         )
 
         if ruta:
-            cv2.imwrite(ruta, self.mapa_procesado)
+            img_guardar = self.mapa_procesado.copy()
+
+            # =========================
+            # AGREGAR CONTORNOS
+            # =========================
+            if self.mostrar_contornos and self.capa_contornos is not None:
+                img_guardar = self.superponer_contornos(
+                    img_guardar,
+                    self.capa_contornos
+                )
+
+            cv2.imwrite(ruta, img_guardar)
 
     def limites_ambientes(self):
 
@@ -503,6 +636,8 @@ class AgroApp:
         # =========================
         # GRÁFICO
         # =========================
+        
+        """
         plt.figure(figsize=(12,6))
 
         plt.hist(
@@ -517,7 +652,7 @@ class AgroApp:
 
         plt.grid(True)
 
-        plt.show()
+        plt.show()"""
 
         # =========================
         # USAR MAPA FILTRADO
@@ -554,18 +689,51 @@ class AgroApp:
 
         grosor = max(1, int(min(h, w) * 0.002))  
 
-        capa = np.zeros((h, w, 3), dtype=np.uint8)
+        capa_contornos = np.zeros((h, w, 3), dtype=np.uint8)
 
         for i in np.unique(mapa):
+            print("region " + str(i))
             mask = (mapa == i).astype(np.uint8) * 255
+            
+            print("medianBLur")
+            try:
+                ksize = int(self.blur_var.get())
+                #ksize = self.blur_var.get()
 
-            contornos, _ = cv2.findContours(
-                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-            )
+                # asegurar impar
+                if ksize % 2 == 0:
+                    ksize += 1
 
-            cv2.drawContours(capa, contornos, -1, (255, 255, 255), grosor)
+                mask = cv2.medianBlur(mask, ksize)
+            except Exception as e:
+                print("ERROR medianBLur:", e)
+                return
 
-        return capa
+            print("CHAIN_APPROX_TC89_KCOS")
+            try:
+                contornos, _ = cv2.findContours(
+                mask, 
+                cv2.RETR_EXTERNAL, 
+                cv2.CHAIN_APPROX_TC89_KCOS
+                )
+            except:
+                print("ERROR CHAIN_APPROX_TC89_KCOS")
+                return
+            print("drawContours")
+            try:
+                cv2.drawContours(
+                capa_contornos,
+                contornos,
+                -1,
+                (0, 165, 255),
+                grosor,
+                lineType=cv2.LINE_AA
+                )
+            except:
+                print("ERROR drawContours")
+                return
+
+        return capa_contornos
 
     def limites(self):
 
@@ -574,27 +742,41 @@ class AgroApp:
             return
 
         # =========================
-        # CACHE
+        # MODO AUTOMÁTICO
         # =========================
-        if self.auto_cache is not None:
-            print("Usando resultados cacheados")
+        if self.modo.get() == "auto":
 
-            mapa = self.auto_cache["mapa"]
-            porcentajes = self.auto_cache["porcentajes"]
-            cmap = self.auto_cache["cmap"]
-            k = self.auto_cache["k"]
-            scores = self.auto_cache["scores"]
+            if self.auto_cache is not None:
+                print("Usando resultados cacheados")
 
+                mapa = self.auto_cache["mapa"]
+                porcentajes = self.auto_cache["porcentajes"]
+                cmap = self.auto_cache["cmap"]
+                k = self.auto_cache["k"]
+                scores = self.auto_cache["scores"]
+
+            else:
+                mapa, porcentajes, cmap, k, scores = calcular_ambientes_auto(self.img)
+
+                self.auto_cache = {
+                    "mapa": mapa,
+                    "porcentajes": porcentajes,
+                    "cmap": cmap,
+                    "k": k,
+                    "scores": scores
+                }
+
+        # =========================
+        # MODO MANUAL
+        # =========================
         else:
-            mapa, porcentajes, cmap, k, scores = calcular_ambientes_auto(self.img)
 
-            self.auto_cache = {
-                "mapa": mapa,
-                "porcentajes": porcentajes,
-                "cmap": cmap,
-                "k": k,
-                "scores": scores
-            }
+            k = self.slider_k.get()
+
+            mapa, porcentajes, cmap = calcular_ambientes(
+                self.img,
+                k
+            )
 
         # =========================
         # VISUALIZACIÓN
@@ -606,6 +788,7 @@ class AgroApp:
         # guardar en la app
         self.mapa_procesado = mapa_procesado
         self.capa_contornos = self.crear_capa_contornos(mapa)
+        self.mostrar_contornos = True
 
         # usar overlay central
         self.actualizar_overlay()
@@ -626,11 +809,14 @@ class AgroApp:
     
     def toggle_contornos(self):
         
+        print("invirtiendo mostrar_contornos")
         self.mostrar_contornos = not self.mostrar_contornos
 
         if self.mostrar_contornos:
+            print("mostrar_contornos TRUE")
             self.btn_contornos.config(text="Ocultar límites")
         else:
+            print("mostrar_contornos FALSE")
             self.btn_contornos.config(text="Mostrar límites")
 
         self.actualizar_overlay()
