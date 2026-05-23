@@ -146,7 +146,7 @@ class AgroApp:
         crear_boton("📂 Cargar Imagen", self.cargar_imagen)
         crear_boton("🔥 Mapa de calor", self.mostrar_exg)
         crear_boton("🌱 Ambientes", self.limites_ambientes)
-        crear_boton("📊 Límites", self.limites)
+        #crear_boton("📊 Límites", self.limites)
 
         self.btn_contornos = crear_boton("Mostrar límites", self.toggle_contornos)
         crear_boton("💾 Guardar Resultado", self.guardar_imagen)
@@ -235,6 +235,27 @@ class AgroApp:
         self.blur_var.delete(0, "end")
         self.blur_var.insert(0, "5")
 
+        # =========================
+        # GROSOR CONTORNOS
+        # =========================
+        tk.Label(
+            panel,
+            text="Grosor límites",
+            bg=BG_PANEL,
+            fg=TEXT_COLOR
+        ).pack(pady=5)
+
+        self.grosor_var = tk.Spinbox(
+            panel,
+            from_=1,
+            to=50,
+            increment=1,
+            width=10
+        )
+
+        self.grosor_var.pack(padx=15, pady=5)
+        self.grosor_var.delete(0, "end")
+        self.grosor_var.insert(0, "2")
 
         # =========================
         # INFO
@@ -672,9 +693,12 @@ class AgroApp:
 
         self.mostrar_imagen(self.mapa_procesado)
 
-        self.label_info.config(
-            text=f"Ambientes: {k}"
-        )
+        texto = f"Ambientes: {k}\n\n"
+
+        for i, p in enumerate(porcentajes):
+            texto += f"Zona {i+1}: {p:.2f}%\n"
+
+        self.label_info.config(text=texto)
 
         # contornos
         self.capa_contornos = self.crear_capa_contornos(mapa)
@@ -687,7 +711,10 @@ class AgroApp:
 
         h, w = mapa.shape
 
-        grosor = max(1, int(min(h, w) * 0.002))  
+        try:
+            grosor = int(self.grosor_var.get())
+        except:
+            grosor = 2
 
         capa_contornos = np.zeros((h, w, 3), dtype=np.uint8)
 
